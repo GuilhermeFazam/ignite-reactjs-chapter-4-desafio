@@ -4,29 +4,50 @@ import { Card } from './Card';
 import { ModalViewImage } from './Modal/ViewImage';
 
 interface Card {
-  title: string;
-  description: string;
-  url: string;
-  ts: number;
-  id: string;
+    title: string;
+    description: string;
+    url: string;
+    ts: number;
+    id: string;
 }
 
 interface CardsProps {
-  cards: Card[];
+    cards: Card[];
 }
 
 export function CardList({ cards }: CardsProps): JSX.Element {
-  // TODO MODAL USEDISCLOSURE
+    const modal = useDisclosure();
+    const [openImage, setOpenImage] = useState('');
 
-  // TODO SELECTED IMAGE URL STATE
+    function handleViewImage(imageUrl): void {
+        setOpenImage(imageUrl);
+        modal.onOpen();
+    }
 
-  // TODO FUNCTION HANDLE VIEW IMAGE
+    return (
+        <>
+            <SimpleGrid
+                flex="1"
+                gap="4"
+                minChildWidth="293px"
+                align="flex-start"
+            >
+                {cards.map(card => {
+                    return (
+                        <Card
+                            key={card.id}
+                            data={card}
+                            viewImage={() => handleViewImage(card.url)}
+                        />
+                    );
+                })}
+            </SimpleGrid>
 
-  return (
-    <>
-      {/* TODO CARD GRID */}
-
-      {/* TODO MODALVIEWIMAGE */}
-    </>
-  );
+            <ModalViewImage
+                isOpen={modal.isOpen}
+                onClose={modal.onClose}
+                imgUrl={openImage}
+            />
+        </>
+    );
 }

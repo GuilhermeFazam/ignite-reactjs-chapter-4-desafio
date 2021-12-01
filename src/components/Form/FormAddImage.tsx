@@ -1,99 +1,139 @@
 import { Box, Button, Stack, useToast } from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from 'react-query';
-
 import { api } from '../../services/api';
 import { FileInput } from '../Input/FileInput';
 import { TextInput } from '../Input/TextInput';
 
 interface FormAddImageProps {
-  closeModal: () => void;
+    closeModal: () => void;
 }
 
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
-  const [imageUrl, setImageUrl] = useState('');
-  const [localImageUrl, setLocalImageUrl] = useState('');
-  const toast = useToast();
+    const [imageUrl, setImageUrl] = useState('');
+    const [localImageUrl, setLocalImageUrl] = useState('');
+    const toast = useToast();
+    const formValidations = {
+        image: {},
+        title: {
+            required: {
+                value: true,
+                message: 'Título obrigatório',
+            },
+            minLength: {
+                value: 2,
+                message: 'Mínimo de 2 caracteres',
+            },
+            maxLength: {
+                value: 20,
+                message: 'Máximo de 20 caracteres',
+            },
+        },
+        description: {
+            required: {
+                value: true,
+                message: 'Descrição obrigatória',
+            },
+            maxLength: {
+                value: 65,
+                message: 'Máximo de 65 caracteres',
+            },
+        },
+    };
 
-  const formValidations = {
-    image: {
-      // TODO REQUIRED, LESS THAN 10 MB AND ACCEPTED FORMATS VALIDATIONS
-    },
-    title: {
-      // TODO REQUIRED, MIN AND MAX LENGTH VALIDATIONS
-    },
-    description: {
-      // TODO REQUIRED, MAX LENGTH VALIDATIONS
-    },
-  };
+    const queryClient = useQueryClient();
+    const mutation = useMutation(
+        async () => {
+            const response = await api.get('api/images');
+            return response.data;
+        },
+        {
+            onSuccess: () => {
+                queryClient.invalidateQueries('images');
+            },
+        }
+    );
+    const { register, handleSubmit, reset, formState, setError, trigger } =
+        useForm();
+    const { errors } = formState;
+    const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
+        try {
+            if (!imageUrl) {
+                toast({
+                    title: 'Falha no envio',
+                    description:
+                        'Ocorreu um erro ao realizar o upload da sua imagem.',
+                    status: 'error',
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+            await api.post('api/images', {
+                title: data.title,
+                description: data.description,
+                url: imageUrl,
+            });
+            await mutation.mutateAsync();
+            toast({
+                title: 'Sucesso',
+                description: 'Imagem Salva com sucesso',
+                status: 'success',
+                duration: 5000,
+                isClosable: true,
+            });
+        } catch {
+            toast({
+                title: 'Falha no envio',
+                description:
+                    'Ocorreu um erro ao realizar o upload da sua imagem.',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            reset();
+            closeModal();
+        }
+    };
 
-  const queryClient = useQueryClient();
-  const mutation = useMutation(
-    // TODO MUTATION API POST REQUEST,
-    {
-      // TODO ONSUCCESS MUTATION
-    }
-  );
+    return (
+        <Box as="form" width="100%" onSubmit={handleSubmit(onSubmit)}>
+            <Stack spacing={4}>
+                <FileInput
+                    setImageUrl={setImageUrl}
+                    localImageUrl={localImageUrl}
+                    setLocalImageUrl={setLocalImageUrl}
+                    setError={setError}
+                    trigger={trigger}
+                    name="image"
+                    {...register('image', formValidations.image)}
+                />
+                <TextInput
+                    placeholder="Título da imagem..."
+                    name="title"
+                    error={errors.title}
+                    {...register('title', formValidations.title)}
+                />
+                <TextInput
+                    placeholder="Descrição da imagem..."
+                    name="description"
+                    error={errors.description}
+                    {...register('description', formValidations.description)}
+                />
+            </Stack>
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState,
-    setError,
-    trigger,
-  } = useForm();
-  const { errors } = formState;
-
-  const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
-    try {
-      // TODO SHOW ERROR TOAST IF IMAGE URL DOES NOT EXISTS
-      // TODO EXECUTE ASYNC MUTATION
-      // TODO SHOW SUCCESS TOAST
-    } catch {
-      // TODO SHOW ERROR TOAST IF SUBMIT FAILED
-    } finally {
-      // TODO CLEAN FORM, STATES AND CLOSE MODAL
-    }
-  };
-
-  return (
-    <Box as="form" width="100%" onSubmit={handleSubmit(onSubmit)}>
-      <Stack spacing={4}>
-        <FileInput
-          setImageUrl={setImageUrl}
-          localImageUrl={localImageUrl}
-          setLocalImageUrl={setLocalImageUrl}
-          setError={setError}
-          trigger={trigger}
-          // TODO SEND IMAGE ERRORS
-          // TODO REGISTER IMAGE INPUT WITH VALIDATIONS
-        />
-
-        <TextInput
-          placeholder="Título da imagem..."
-          // TODO SEND TITLE ERRORS
-          // TODO REGISTER TITLE INPUT WITH VALIDATIONS
-        />
-
-        <TextInput
-          placeholder="Descrição da imagem..."
-          // TODO SEND DESCRIPTION ERRORS
-          // TODO REGISTER DESCRIPTION INPUT WITH VALIDATIONS
-        />
-      </Stack>
-
-      <Button
-        my={6}
-        isLoading={formState.isSubmitting}
-        isDisabled={formState.isSubmitting}
-        type="submit"
-        w="100%"
-        py={6}
-      >
-        Enviar
-      </Button>
-    </Box>
-  );
+            <Button
+                my={6}
+                isLoading={formState.isSubmitting}
+                isDisabled={formState.isSubmitting}
+                type="submit"
+                w="100%"
+                py={6}
+            >
+                Enviar
+            </Button>
+        </Box>
+    );
 }
