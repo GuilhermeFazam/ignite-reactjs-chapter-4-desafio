@@ -8,44 +8,37 @@ import { Loading } from '../components/Loading';
 import { api } from '../services/api';
 
 export default function Home(): JSX.Element {
+    const fetchImages = ({ pageParam = null }): Promise<any> =>
+        api.get('api/images', { params: { after: pageParam } });
     const {
         data,
-        error,
         fetchNextPage,
         hasNextPage,
-        isFetching,
+        isLoading,
+        isError,
         isFetchingNextPage,
-        status,
-    } = useInfiniteQuery(
-        'images',
-        ({ pageParam = null }): Promise<any> =>
-            api.get('api/images', { params: { after: pageParam } }),
-        {
-            getNextPageParam: (lastPage, pages) => lastPage.data.after,
-        }
-    );
-
+    } = useInfiniteQuery('images', fetchImages, {
+        getNextPageParam: (lastPage, pages) => {
+            if (lastPage.data.after) {
+                return lastPage.data.after;
+            }
+            return null;
+        },
+    });
     const formattedData = useMemo(() => {
-        const newArray = [];
-        data?.pages.map(page => {
-            return page.data.data.map(item => {
-                return newArray.push({
-                    title: item.title,
-                    description: item.description,
-                    url: item.url,
-                    ts: item.ts,
-                    id: item.id,
-                });
-            });
+        const newData = data?.pages.map(page => {
+            return page.data.data;
         });
-        return newArray;
+        return newData?.flat();
     }, [data]);
+
     async function handleNewImages(): Promise<void> {
-        const teste = await fetchNextPage();
-        console.log(teste);
-        console.log(formattedData);
+        if (hasNextPage) {
+            await fetchNextPage();
+        }
     }
-    if (isFetching) {
+
+    if (isLoading) {
         return (
             <>
                 <Header />
@@ -54,7 +47,7 @@ export default function Home(): JSX.Element {
         );
     }
 
-    if (error || status === 'error') {
+    if (isError) {
         return (
             <>
                 <Header />
