@@ -42,7 +42,6 @@ export default async function handler(
                 return res.status(201).json({ success: true });
             })
             .catch(err => {
-                console.log(err);
                 res.status(501).json({
                     error: `Sorry something Happened! ${err.message}`,
                 });

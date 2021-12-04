@@ -15,7 +15,30 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
     const [localImageUrl, setLocalImageUrl] = useState('');
     const toast = useToast();
     const formValidations = {
-        image: {},
+        image: {
+            required: {
+                value: true,
+                message: 'Título obrigatório',
+            },
+            validate: {
+                lessThan10MB: value => {
+                    const imageSize = value[0].size / 1000;
+                    const imageMaxSize = 1000 * 10;
+                    return (
+                        imageMaxSize > imageSize ||
+                        'O arquivo deve ser menor que 10MB'
+                    );
+                },
+                acceptedFormats: value => {
+                    const fileType = value[0].type;
+                    const regex = new RegExp(/.(gif|jpeg|png)$/i);
+                    return (
+                        regex.test(fileType) ||
+                        'Somente são aceitos arquivos PNG, JPEG e GIF'
+                    );
+                },
+            },
+        },
         title: {
             required: {
                 value: true,
@@ -108,6 +131,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
                     setError={setError}
                     trigger={trigger}
                     name="image"
+                    error={errors.image}
                     {...register('image', formValidations.image)}
                 />
                 <TextInput
@@ -123,7 +147,6 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
                     {...register('description', formValidations.description)}
                 />
             </Stack>
-
             <Button
                 my={6}
                 isLoading={formState.isSubmitting}

@@ -37,7 +37,6 @@ export default function Home(): JSX.Element {
             await fetchNextPage();
         }
     }
-
     if (isLoading) {
         return (
             <>
@@ -46,7 +45,6 @@ export default function Home(): JSX.Element {
             </>
         );
     }
-
     if (isError) {
         return (
             <>
@@ -55,7 +53,6 @@ export default function Home(): JSX.Element {
             </>
         );
     }
-
     return (
         <>
             <Header />
